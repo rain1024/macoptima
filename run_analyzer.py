@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 MacOptima Unified Analyzer
 Runs all analyzers and generates a comprehensive HTML report.
@@ -14,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 from application_storage_analyzer import (
     analyze_applications_folder,
     format_bytes,
-    get_directory_size,
 )
 from cache_storage_analyzer import analyze_directory, get_common_cache_locations
 
@@ -25,7 +23,6 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
     # Calculate totals
     total_apps_size = sum(app['size'] for app in apps_data)
     total_data_size = sum(app['data_size'] for app in apps_data)
-    total_cache_size_apps = sum(app['cache_size'] for app in apps_data)
     total_cache_size = sum(stats['total_size'] for _, stats in cache_data)
 
     now = datetime.now()
@@ -33,12 +30,7 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
     # Statistics for apps
     never_used_apps = [app for app in apps_data if app['last_opened'] is None]
     not_used_recently = [
-        app
-        for app in apps_data
-        if app['last_opened'] and (now - app['last_opened']).days > 180
-    ]
-    old_apps = [
-        app for app in apps_data if app['modified'] and (now - app['modified']).days > 365
+        app for app in apps_data if app['last_opened'] and (now - app['last_opened']).days > 180
     ]
 
     html = f"""<!DOCTYPE html>
@@ -340,7 +332,9 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
             'size-large' if total > 1024**3 else 'size-medium' if total > 100 * 1024**2 else ''
         )
         last_used = (
-            app['last_opened'].strftime('%Y-%m-%d') if app['last_opened'] else '<span class="badge badge-warning">Never</span>'
+            app['last_opened'].strftime('%Y-%m-%d')
+            if app['last_opened']
+            else '<span class="badge badge-warning">Never</span>'
         )
         html += f"""
                         <tr>
@@ -359,7 +353,9 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
 
     # Never used apps
     if never_used_apps:
-        never_used_size = sum(app['size'] + app['data_size'] + app['cache_size'] for app in never_used_apps)
+        never_used_size = sum(
+            app['size'] + app['data_size'] + app['cache_size'] for app in never_used_apps
+        )
         html += f"""
                 <h3>� Never Used Applications ({len(never_used_apps)} apps, {format_bytes(never_used_size)})</h3>
                 <div class="warning">
@@ -392,7 +388,9 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
 
     # Not used recently
     if not_used_recently:
-        not_used_size = sum(app['size'] + app['data_size'] + app['cache_size'] for app in not_used_recently)
+        not_used_size = sum(
+            app['size'] + app['data_size'] + app['cache_size'] for app in not_used_recently
+        )
         html += f"""
                 <h3>=� Not Used Recently ({len(not_used_recently)} apps, {format_bytes(not_used_size)})</h3>
                 <div class="info">
@@ -452,7 +450,11 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
 """
     for path, stats in cache_sorted:
         size_class = (
-            'size-large' if stats['total_size'] > 1024**3 else 'size-medium' if stats['total_size'] > 100 * 1024**2 else ''
+            'size-large'
+            if stats['total_size'] > 1024**3
+            else 'size-medium'
+            if stats['total_size'] > 100 * 1024**2
+            else ''
         )
         html += f"""
                         <tr>
@@ -483,7 +485,9 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
 """
         for subfolder, size in largest_cache_stats['subfolders'][:15]:
             folder_name = Path(subfolder).name
-            size_class = 'size-large' if size > 1024**3 else 'size-medium' if size > 100 * 1024**2 else ''
+            size_class = (
+                'size-large' if size > 1024**3 else 'size-medium' if size > 100 * 1024**2 else ''
+            )
             html += f"""
                         <tr>
                             <td><code>{folder_name}</code></td>
@@ -505,7 +509,9 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
                     <ul style="margin-left: 20px; line-height: 1.8;">
 """
     if never_used_apps:
-        never_used_size = sum(app['size'] + app['data_size'] + app['cache_size'] for app in never_used_apps)
+        never_used_size = sum(
+            app['size'] + app['data_size'] + app['cache_size'] for app in never_used_apps
+        )
         html += f"""
                         <li><strong>Remove {len(never_used_apps)} never-used applications</strong> to free up {format_bytes(never_used_size)}</li>
 """
@@ -516,7 +522,9 @@ def generate_html_report(apps_data, cache_data, output_file='storage_report.html
 """
 
     if not_used_recently:
-        not_used_size = sum(app['size'] + app['data_size'] + app['cache_size'] for app in not_used_recently[:10])
+        not_used_size = sum(
+            app['size'] + app['data_size'] + app['cache_size'] for app in not_used_recently[:10]
+        )
         html += f"""
                         <li><strong>Review {len(not_used_recently)} unused applications</strong> (not used in 6+ months)</li>
 """
@@ -577,7 +585,7 @@ def main():
     output_file = generate_html_report(apps, cache_results)
 
     print(f'\n Report generated: {output_file}')
-    print(f'\nOpen the report in your browser:')
+    print('\nOpen the report in your browser:')
     print(f'   open {output_file}')
 
     # Summary
